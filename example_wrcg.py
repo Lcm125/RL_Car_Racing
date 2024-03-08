@@ -153,8 +153,10 @@ class DQN:
 
     def load(self, steps):
         self.network.load_state_dict(torch.load('dqn_{}.pt'.format(steps)))
+        self.target_network.load_state_dict(torch.load('dqn_{}.pt'.format(steps)))
         self.buffer.load()
-        # self.epsilon = max((self.epsilon - self.epsilon_decay * steps), self.ep
+        self.epsilon = self.epsilon - self.epsilon_decay * steps
+        self.total_steps = steps
 
 
 def evaluate(wrcg_env, agent):
@@ -203,12 +205,12 @@ def train(wrcg_env, agent):
 
 
 if __name__ == '__main__':
-    wrcg_env = Env(0x001A115C)
+    wrcg_env = Env(0x01540880)
     state_dim = (4, 112, 112)
     action_dim = 4
     agent = DQN(state_dim, action_dim)
 
-    # agent.load(10000)
+    agent.load(20000)
 
     train(wrcg_env, agent)
     print(evaluate(wrcg_env, agent))
