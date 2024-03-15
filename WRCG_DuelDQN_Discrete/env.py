@@ -7,7 +7,7 @@ import win32con
 import numpy as np
 import cv2
 from action import Action
-from utils import get_speed, get_dist, get_direction, get_distance_area
+from utils import get_speed, get_dist, get_direction, get_distance_area, get_edge
 
 
 class Env():
@@ -24,7 +24,8 @@ class Env():
         self.repeat_nums = 0
         self.repeat_thres = 20
         win32gui.SetForegroundWindow(self.hwnd_target)
-        self.end_thres = None
+        # self.end_thres = None
+        self.last_dist = None
         time.sleep(1)
         self.pause_game()
         time.sleep(1)
@@ -94,11 +95,18 @@ class Env():
         return im_opencv
 
     def get_dist(self, img):
-        return get_dist(img)
+        # print(self.last_dist)
+        # if self.last_dist is None or self.last_dist >= 1000:
+        return get_dist(img, rect=[40, 130, 120, 160])
+        # print(1)
+        # return get_dist(img, rect=[40, 130, 90, 160])
 
     def get_speed(self, img):
         direction = get_direction(img)
         return get_speed(img) * direction
+
+    def get_edge(self, img):
+        return get_edge(img)
 
     def calc_reward(self, dist, dist_):
         return (-dist_ + dist) * 1 - 0.1
@@ -120,6 +128,7 @@ class Env():
             time.sleep(0.5)
 
         state_ = self.get_frame()
+        out_edge = self.get_edge(state_)
         gray = cv2.cvtColor(state_,  cv2.COLOR_BGR2GRAY)
         gray = cv2.resize(gray, (112, 112)) / 255.
         self.states.pop(0)
@@ -127,8 +136,17 @@ class Env():
 
         dist_ = self.get_dist(state_)
         if dist_ is None or self.last_dist is None:
-            return None, None, None, True
+            print('None err', dist_, self.last_dist)
+            return None, None, None, 1
+        if abs(dist_ - self.last_dist) >= 100:
+            print('dist diff err', dist_, self.last_dist)
+            return None, None, None, 2
+        if dist_ <= 20 and self.last_dist <= 30:
+            print('small dist reset', dist_, self.last_dist)
+            return None, None, None, 3
         r = self.calc_reward(self.last_dist, dist_)
+        if out_edge:
+            r = -0.1
 
         if self.last_dist == dist_:
             self.repeat_nums += 1
@@ -138,12 +156,25 @@ class Env():
 
         self.last_dist = dist_
 
-        done = True if self.repeat_nums >= self.repeat_thres else False
+        done = True if (self.repeat_nums >= self.repeat_thres or out_edge) else False
         # if done:
         #     r = -10
-        return np.stack(self.states, axis=0), r, done, False
+        return np.stack(self.states, axis=0), r, done, 0
 
     def init_run(self):
         for i in range(1):
             self.step(0)
         time.sleep(5)
+
+if __name__ == '__main__':
+    wrcg_env = Env(0x00120D3A)
+    while True:
+        img = wrcg_env.get_frame()
+        # dist = wrcg_env.get_dist(img)
+        out_edge = get_edge(img)
+        print(out_edge)
+        # wrcg_env.last_dist = dist
+        # break
+        # if dist is None:
+        #     break
+        # print(dist)
