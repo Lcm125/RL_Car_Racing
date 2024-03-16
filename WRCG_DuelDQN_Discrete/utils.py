@@ -74,18 +74,22 @@ def get_speed(img, rects=[[1688, 1147], [1719, 1147], [1750, 1147]], size=[25, 4
 
 def get_dist(img, rect=[40, 130, 100, 160]):
     img = get_distance_area(img, rect)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # cv2.imwrite('im_gray_dist.jpg', img)
-    _, img = cv2.threshold(img, 220, 255, cv2.THRESH_BINARY)
-    # cv2.imwrite('im_thres_dist.jpg', img)
-    # return None
-    result = reader.readtext(img)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+    _, thres = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY)
+
+    # return None
+    result = reader.readtext(thres)
+    # cv2.imwrite('im_gray_dist.jpg', gray)
+    # cv2.imwrite('im_thres_dist.jpg', thres)
+    # cv2.imwrite('im_error_dist.jpg', img)
     # print(result[0][1], s)
     if len(result):
         s = result[0][1].lower().replace('m', '').strip()
         if s.isnumeric():
             return int(s)
+    cv2.imwrite('im_gray_dist.jpg', gray)
+    cv2.imwrite('im_thres_dist.jpg', thres)
     cv2.imwrite('im_error_dist.jpg', img)
     return None
 
@@ -100,9 +104,9 @@ def get_direction(img):
         direction = 1
     return direction
 
-def get_edge(img):
-    roi1 = get_distance_area(img, rect=[1662, 307, 1680, 325])
-    roi2 = get_distance_area(img, rect=[1672, 307, 1690, 325])
+def get_edge(img, rect1, rect2):
+    roi1 = get_distance_area(img, rect=rect1)
+    roi2 = get_distance_area(img, rect=rect2)
     roi1 = cv2.cvtColor(roi1, cv2.COLOR_BGR2GRAY)
     roi2 = cv2.cvtColor(roi2, cv2.COLOR_BGR2GRAY)
     # cv2.imwrite('edge1.jpg', roi1)

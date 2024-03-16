@@ -1,3 +1,5 @@
+import os
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 import numpy as np
 import torch
 from model import CNNActionValue
@@ -63,12 +65,12 @@ class Agent:
             state_dim,
             action_dim,
             lr=0.00025,
-            epsilon=0.5,
+            epsilon=0.8,
             epsilon_min=0.0,
             gamma=0.99,
-            batch_size=128,
+            batch_size=256,
             warmup_steps=5000,
-            buffer_size=int(5e4),
+            buffer_size=int(3e4),
             target_update_interval=10000,
     ):
         self.action_dim = action_dim
@@ -84,7 +86,7 @@ class Agent:
         self.optimizer = torch.optim.RMSprop(self.network.parameters(), lr)
 
         self.buffer = ReplayBuffer(state_dim, (1,), buffer_size)
-        self.device = torch.device('cuda' if torch.cuda.is_available else 'cpu')
+        self.device = torch.device('cuda:0' if torch.cuda.is_available else 'cpu')
         self.network.to(self.device)
         self.target_network.to(self.device)
 
@@ -125,7 +127,7 @@ class Agent:
         self.total_steps += 1
         self.buffer.update(*transition)
 
-        if self.total_steps > self.warmup_steps:
+        if self.total_steps > self.warmup_steps and self.total_steps % 10 == 0:
             result = self.learn()
             # print(result)
 
@@ -134,10 +136,11 @@ class Agent:
         self.epsilon -= self.epsilon_decay
         return result
 
-    def load(self, steps):
-        self.network.load_state_dict(torch.load('dqn_{}.pt'.format(steps)))
-        self.target_network.load_state_dict(torch.load('dqn_{}.pt'.format(steps)))
-        self.buffer.load()
+    def load(self, steps, training=True):
+        self.network.load_state_dict(torch.load('checkpoints/dqn_{}.pt'.format(steps)))
+        self.target_network.load_state_dict(torch.load('checkpoints/dqn_{}.pt'.format(steps)))
+        if training:
+            self.buffer.load()
         self.epsilon = self.epsilon - self.epsilon_decay * steps
         self.total_steps = steps
         print('epsilon:', self.epsilon)
@@ -198,7 +201,7 @@ def train(wrcg_env, agent):
             s = wrcg_env.reset_car()
 
         if agent.total_steps % eval_interval == 0:
-            torch.save(agent.network.state_dict(), 'dqn_{}.pt'.format(agent.total_steps))
+            torch.save(agent.network.state_dict(), 'checkpoints/dqn_{}.pt'.format(agent.total_steps))
             agent.buffer.save()
 
             ret = evaluate(wrcg_env, agent)
@@ -212,13 +215,13 @@ def train(wrcg_env, agent):
 
 
 if __name__ == '__main__':
-    wrcg_env = Env(0x00130E64)
+    wrcg_env = Env(0x000806FA)
     state_dim = (4, 112, 112)
     action_dim = 4
     agent = Agent(state_dim, action_dim)
 
-    agent.load(80000)
+    agent.load(70000, True)
 
-    # train(wrcg_env, agent)
+    train(wrcg_env, agent)
     # print(evaluate(wrcg_env, agent))
-    print(continous_evaluate(wrcg_env, agent))
+    # print(continous_evaluate(wrcg_env, agent))

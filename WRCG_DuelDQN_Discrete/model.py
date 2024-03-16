@@ -10,22 +10,22 @@ class CNNActionValue(nn.Module):
             nn.ReLU(),
             nn.Conv2d(32, 64, kernel_size=3, stride=2),  # [N, 32, 27, 27] -> [N, 64, 13, 13] PF=16
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=2),  # [N, 64, 13, 13] -> [N, 64, 6, 6] PF=32
+            nn.Conv2d(64, 128, kernel_size=3, stride=2),  # [N, 64, 13, 13] -> [N, 64, 6, 6] PF=32
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=4, stride=2),  # [N, 64, 6, 6] -> [N, 64, 2, 2] PF=64
+            nn.Conv2d(128, 256, kernel_size=4, stride=2),  # [N, 64, 6, 6] -> [N, 64, 2, 2] PF=64
             nn.ReLU(),
         )
 
-        self.in_features = 64 * 2 * 2
+        self.in_features = 256 * 2 * 2
         self.advantage = nn.Sequential(
-            nn.Linear(self.in_features, 32),
+            nn.Linear(self.in_features, 128),
             nn.ReLU(),
-            nn.Linear(32, action_dim),
+            nn.Linear(128, action_dim),
         )
         self.value = nn.Sequential(
-            nn.Linear(self.in_features, 32),
+            nn.Linear(self.in_features, 128),
             nn.ReLU(),
-            nn.Linear(32, 1),
+            nn.Linear(128, 1),
         )
 
     def forward(self, x):
