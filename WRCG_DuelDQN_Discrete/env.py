@@ -144,12 +144,12 @@ class Env():
         if abs(dist_ - self.last_dist) >= 100:
             print('dist diff err', dist_, self.last_dist)
             return None, None, None, 2
-        if dist_ <= 30 and self.last_dist <= 30:
+        if dist_ <= 40 and self.last_dist <= 40:
             print('small dist reset', dist_, self.last_dist)
             return None, None, None, 3
         r = self.calc_reward(self.last_dist, dist_)
-        if out_edge:
-            r = -0.1
+        # if out_edge:
+        #     r = -0.1
 
         if self.last_dist == dist_:
             self.repeat_nums += 1
@@ -160,8 +160,8 @@ class Env():
         self.last_dist = dist_
 
         done = True if (self.repeat_nums >= self.repeat_thres or out_edge) else False
-        # if done:
-        #     r = -10
+        if done:
+            r -= 20
         return np.stack(self.states, axis=0), r, done, 0
 
     def init_run(self):

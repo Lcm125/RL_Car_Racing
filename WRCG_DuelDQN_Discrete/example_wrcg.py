@@ -147,19 +147,20 @@ class Agent:
 
 
 def evaluate(wrcg_env, agent):
-    scores = 0
-    for i in range(5):
-        ret = 0
-        s = wrcg_env.reset_game()
-        while True:
-            a = agent.act(s, training=False)
-            s_prime, r, done, err = wrcg_env.step(a)
-            if done or err:
-                break
-            s = s_prime
-            ret += r
-        scores += ret
-    return np.round(scores / 5, 4)
+    ret = 0
+    s = wrcg_env.reset_game()
+    for i in range(1000):
+        a = agent.act(s, training=False)
+        s_prime, r, done, err = wrcg_env.step(a)
+        if done or err == 1 or err == 2:
+            s = wrcg_env.reset_car()
+            continue
+        if err == 3:
+            s = wrcg_env.reset_game()
+            continue
+        s = s_prime
+        ret += r
+    return np.round(ret, 4)
 
 
 def continous_evaluate(wrcg_env, agent):
@@ -220,8 +221,9 @@ if __name__ == '__main__':
     action_dim = 4
     agent = Agent(state_dim, action_dim)
 
-    agent.load(70000, True)
+    agent.network.load_state_dict(torch.load('checkpoints/dqn_{}.pt'.format(40000)))
+    agent.target_network.load_state_dict(torch.load('checkpoints/dqn_{}.pt'.format(40000)))
 
-    train(wrcg_env, agent)
-    # print(evaluate(wrcg_env, agent))
+    # train(wrcg_env, agent)
+    print(evaluate(wrcg_env, agent))
     # print(continous_evaluate(wrcg_env, agent))
