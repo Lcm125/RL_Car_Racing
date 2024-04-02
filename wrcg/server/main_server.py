@@ -26,5 +26,5 @@ if __name__ == '__main__':
                 t2 = time.time()
                 # print(t2 - t)
                 t = t2
-                pbar.update(100 / agent.total_steps)
+                pbar.update(100 / 1e6)
         print(f"disconnected: {addr}")
