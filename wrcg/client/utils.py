@@ -133,7 +133,7 @@ def get_edge(img, rect):
     # cv2.imwrite('edge.jpg', roi)
     res = cv2.matchTemplate(roi, edge_refer_img, cv2.TM_SQDIFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    return True if min_val < 0.015 else False
+    return True if min_val < 0.1 else False
 
 def get_restart_text(img):
     res = cv2.matchTemplate(get_binary(img), get_binary(restart_text_refer_img), cv2.TM_SQDIFF_NORMED)
