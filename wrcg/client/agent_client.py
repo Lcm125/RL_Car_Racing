@@ -50,6 +50,7 @@ class Agent:
         if self.total_steps > self.warmup_steps and self.total_steps % self.update_interval == 0:
             # t = time.time()
             self.update_network(socket)
+            print('steps:{}. update network'.format(self.total_steps))
             # print(time.time() - t)
             return True
         return False
